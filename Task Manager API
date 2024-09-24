@@ -1,0 +1,165 @@
+Here’s a simple backend project for a fresher: "Task Manager API".
+
+Project Overview:
+You'll build a RESTful API for a simple Task Manager that allows users to:
+
+Create a new task.
+View all tasks.
+View a specific task by ID.
+Update a task.
+Delete a task.
+Technologies:
+Language: Java
+Framework: Spring Boot
+Database: H2 (in-memory database) or MySQL
+Tools: Postman for API testing
+Features:
+Create a Task: Users can create a new task with a title and description.
+Get All Tasks: Users can retrieve a list of all tasks.
+Get Task by ID: Users can fetch details of a specific task by its ID.
+Update a Task: Users can update the title or description of an existing task.
+Delete a Task: Users can delete a task by its ID.
+Step-by-Step Guide:
+1. Set Up Spring Boot Project
+Use Spring Initializr (https://start.spring.io/) to create a new Spring Boot project.
+Dependencies: Spring Web, Spring Data JPA, H2 Database (or MySQL if you want a persistent database).
+2.Create Task entity
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+
+@Entity
+public class Task {
+    
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    
+    private String title;
+    
+    private String description;
+
+    // Constructors, Getters, and Setters
+    public Task() {}
+    
+    public Task(String title, String description) {
+        this.title = title;
+        this.description = description;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+}
+3.create task repository
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface TaskRepository extends JpaRepository<Task, Long> {
+}
+4.Create task Service
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import java.util.List;
+import java.util.Optional;
+
+@Service
+public class TaskService {
+
+    @Autowired
+    private TaskRepository taskRepository;
+
+    public List<Task> getAllTasks() {
+        return taskRepository.findAll();
+    }
+
+    public Optional<Task> getTaskById(Long id) {
+        return taskRepository.findById(id);
+    }
+
+    public Task createTask(Task task) {
+        return taskRepository.save(task);
+    }
+
+    public Task updateTask(Long id, Task newTask) {
+        return taskRepository.findById(id).map(task -> {
+            task.setTitle(newTask.getTitle());
+            task.setDescription(newTask.getDescription());
+            return taskRepository.save(task);
+        }).orElseGet(() -> {
+            newTask.setId(id);
+            return taskRepository.save(newTask);
+        });
+    }
+
+    public void deleteTask(Long id) {
+        taskRepository.deleteById(id);
+    }
+}
+
+
+5.
+create task cotroller
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Optional;
+
+@RestController
+@RequestMapping("/api/tasks")
+public class TaskController {
+
+    @Autowired
+    private TaskService taskService;
+
+    // Get all tasks
+    @GetMapping
+    public List<Task> getAllTasks() {
+        return taskService.getAllTasks();
+    }
+
+    // Get a task by ID
+    @GetMapping("/{id}")
+    public Optional<Task> getTaskById(@PathVariable Long id) {
+        return taskService.getTaskById(id);
+    }
+
+    // Create a new task
+    @PostMapping
+    public Task createTask(@RequestBody Task task) {
+        return taskService.createTask(task);
+    }
+
+    // Update a task
+    @PutMapping("/{id}")
+    public Task updateTask(@PathVariable Long id, @RequestBody Task task) {
+        return taskService.updateTask(id, task);
+    }
+
+    // Delete a task
+    @DeleteMapping("/{id}")
+    public void deleteTask(@PathVariable Long id) {
+        taskService.deleteTask(id);
+    }
+}
